@@ -1,0 +1,163 @@
+---
+- hosts: sympa
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    # see https://docs.ansible.com/ansible/latest/user_guide/become.html#risks-of-becoming-an-unprivileged-user
+    ansible_common_remote_group: "{{pac}}"
+    ansible_remote_tmp: ~/.ansible/tmp
+
+  tasks:
+  - name: Create user, domain and database
+    import_tasks: tasks/hs_basis.yml
+
+  #################################
+  ## create directories
+  #################################
+  - name: create directory sympa
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    file:
+      path: "/home/pacs/{{pac}}/users/{{user}}/sympa"
+      state: directory
+  - name: create directory bin
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    file:
+      path: "/home/pacs/{{pac}}/users/{{user}}/bin"
+      state: directory
+  - name: create directory etc
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    file:
+      path: "/home/pacs/{{pac}}/users/{{user}}/etc"
+      state: directory
+  - name: create directory var/tmp
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    file:
+      path: "/home/pacs/{{pac}}/users/{{user}}/var/tmp"
+      state: directory
+  - name: create directory var/log
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    file:
+      path: "/home/pacs/{{pac}}/users/{{user}}/var/log"
+      state: directory
+  - name: create directory var/run
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    file:
+      path: "/home/pacs/{{pac}}/users/{{user}}/var/run"
+      state: directory
+
+  ##################################
+  ## install sympa
+  ##################################
+
+  - name: download sympa release
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    unarchive:
+      src: https://github.com/sympa-community/sympa/releases/download/{{sympa_version}}/sympa-{{sympa_version}}.tar.gz
+      remote_src: yes
+      dest: /home/pacs/{{pac}}/users/{{user}}
+      creates: /home/pacs/{{pac}}/users/{{user}}/sympa-{{sympa_version}}/README.md
+
+  - name: build sympa
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    # see https://www.sympa.community/manual/install/install-sympa-distribution-source.html
+    shell: |
+      ./configure --enable-fhs --prefix=/home/pacs/{{pac}}/users/{{user}}/sympa --with-confdir=/home/pacs/{{pac}}/users/{{user}}/etc --with-user={{pac}}-{{user}} --with-group={{pac}} --without-initdir || exit -1
+      make || exit -1
+      make install || exit -1
+      touch /home/pacs/{{pac}}/users/{{user}}/.built_sympa
+    args:
+      executable: /bin/bash
+      chdir: "/home/pacs/{{pac}}/users/{{user}}/sympa-{{sympa_version}}"
+      creates: "/home/pacs/{{pac}}/users/{{user}}/.built_sympa"
+
+  - name: install dependent modules
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    shell: |
+      export PERL_MM_USE_DEFAULT=1
+      cpan App::cpanminus || exit -1
+      $HOME/perl5/bin/cpanm --installdeps --with-recommends -notest . || exit -1
+      touch /home/pacs/{{pac}}/users/{{user}}/.modules_installed
+    args:
+      executable: /bin/bash
+      chdir: "/home/pacs/{{pac}}/users/{{user}}/sympa-{{sympa_version}}"
+      creates: "/home/pacs/{{pac}}/users/{{user}}/.modules_installed"
+
+  ##################################
+  ## configuration
+  ##################################
+  - name: upload configuration file
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    template: dest="/home/pacs/{{pac}}/users/{{user}}/etc/sympa.conf" src="templates/sympa.conf"
+
+  - name: upload monit file
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    template: dest="/home/pacs/{{pac}}/users/{{user}}/.monitrc" src="templates/monitrc" mode=700
+
+  - name: upload start scripts
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    template: dest="/home/pacs/{{pac}}/users/{{user}}/bin/{{item}}-start.sh" src="templates/{{item}}-start.sh" mode=700
+    loop: ["sympa-archive", "sympa-bounce", "sympa-outgoing", "sympa-task", "sympa"]
+
+  - name: upload stop scripts
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    template: dest="/home/pacs/{{pac}}/users/{{user}}/bin/{{item}}-stop.sh" src="templates/{{item}}-stop.sh" mode=700
+    loop: ["sympa-archive", "sympa-bounce", "sympa-outgoing", "sympa-task", "sympa"]
+
+  ######################
+  ## initialise instance
+  ######################
+  - name: create database tables
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    shell: |
+      export PERL5LIB=$HOME/perl5/lib/perl5/
+      ./sbin/sympa.pl upgrade || exit -1
+      ./sbin/sympa.pl check || exit -1
+      touch /home/pacs/{{pac}}/users/{{user}}/.db_created
+    args:
+      executable: /bin/bash
+      chdir: "/home/pacs/{{pac}}/users/{{user}}/sympa"
+      creates: "/home/pacs/{{pac}}/users/{{user}}/.db_created"
+
+  ########################
+  ## setup the apache site
+  ########################
+
+  # TODO
+
+  ####################################
+  ## install cron jobs
+  ####################################
+  - name: start monit as cronjob
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    cron:
+      name: "start monit at reboot"
+      special_time: reboot
+      job: rm -f $HOME/var/run/* && /usr/bin/monit -c "$HOME/.monitrc"
+
+  ##############################################
+  ## start services via monit
+  ##############################################
+  - name: start monit
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    shell: |
+      /usr/bin/monit -c ".monitrc"
+    args:
+      executable: /bin/bash
+      chdir: "/home/pacs/{{pac}}/users/{{user}}/"
+      creates: "/home/pacs/{{pac}}/users/{{user}}/var/run/monit.id"
+

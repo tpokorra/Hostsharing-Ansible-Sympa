@@ -1,0 +1,27 @@
+set daemon 60 with start delay 120
+set logfile /home/pacs/{{pac}}/users/{{user}}/var/log/monit.log
+set idfile /home/pacs/{{pac}}/users/{{user}}/var/run/monit.id
+set pidfile /home/pacs/{{pac}}/users/{{user}}/var/run/monit.pid
+set statefile /home/pacs/{{pac}}/users/{{user}}/var/run/monit.state
+set mailserver localhost
+set mail-format { from: monit@{{pac}}.hostsharing.net }
+
+check process archive with pidfile /home/pacs/{{pac}}/users/{{user}}/var/run/archived.pid
+    start program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-archive-start.sh"
+    stop program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-archive-stop.sh"
+
+check process bounce with pidfile /home/pacs/{{pac}}/users/{{user}}/var/run/bounced.pid
+    start program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-bounce-start.sh"
+    stop program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-bounce-stop.sh"
+
+check process outgoing with pidfile /home/pacs/{{pac}}/users/{{user}}/var/run/bulk.pid
+    start program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-outgoing-start.sh"
+    stop program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-outgoing-stop.sh"
+
+check process sympa_msg with pidfile /home/pacs/{{pac}}/users/{{user}}/var/run/sympa_msg.pid
+    start program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-start.sh"
+    stop program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-stop.sh"
+
+check process task_manager with pidfile /home/pacs/{{pac}}/users/{{user}}/var/run/task_manager.pid
+    start program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-task-start.sh"
+    stop program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-task-stop.sh"
