@@ -68,7 +68,11 @@
     become_user: "{{pac}}-{{user}}"
     # see https://www.sympa.community/manual/install/install-sympa-distribution-source.html
     shell: |
-      ./configure --enable-fhs --prefix=/home/pacs/{{pac}}/users/{{user}}/sympa --with-confdir=/home/pacs/{{pac}}/users/{{user}}/etc --with-user={{pac}}-{{user}} --with-group={{pac}} --without-initdir || exit -1
+      ./configure --enable-fhs --prefix=/home/pacs/{{pac}}/users/{{user}}/sympa \
+         --with-confdir=/home/pacs/{{pac}}/users/{{user}}/etc \
+         --with-piddir=/home/pacs/{{pac}}/users/{{user}}/var/run \
+         --with-user={{pac}}-{{user}} --with-group={{pac}} \
+         --without-initdir || exit -1
       make || exit -1
       make install || exit -1
       touch /home/pacs/{{pac}}/users/{{user}}/.built_sympa
@@ -107,13 +111,13 @@
     become: yes
     become_user: "{{pac}}-{{user}}"
     template: dest="/home/pacs/{{pac}}/users/{{user}}/bin/{{item}}-start.sh" src="templates/{{item}}-start.sh" mode=700
-    loop: ["sympa-archive", "sympa-bounce", "sympa-outgoing", "sympa-task", "sympa"]
+    loop: ["sympa-archive", "sympa-bounce", "sympa-outgoing", "sympa-task", "sympa-fcgi", "sympa"]
 
   - name: upload stop scripts
     become: yes
     become_user: "{{pac}}-{{user}}"
     template: dest="/home/pacs/{{pac}}/users/{{user}}/bin/{{item}}-stop.sh" src="templates/{{item}}-stop.sh" mode=700
-    loop: ["sympa-archive", "sympa-bounce", "sympa-outgoing", "sympa-task", "sympa"]
+    loop: ["sympa-archive", "sympa-bounce", "sympa-outgoing", "sympa-task", "sympa-fcgi", "sympa"]
 
   ######################
   ## initialise instance
@@ -134,8 +138,18 @@
   ########################
   ## setup the apache site
   ########################
+  - name: upload htaccess file
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    template: dest="/home/pacs/{{pac}}/users/{{user}}/doms/{{domain}}/htdocs-ssl/.htaccess" src="templates/htaccess" mode=644
 
-  # TODO
+  - name: create symbolic link for static content
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    file:
+      src: "/home/pacs/{{pac}}/users/{{user}}/sympa/var/lib/sympa/static_content"
+      dest: "/home/pacs/{{pac}}/users/{{user}}/doms/{{domain}}/htdocs-ssl/static-sympa"
+      state: link
 
   ####################################
   ## install cron jobs
@@ -160,4 +174,3 @@
       executable: /bin/bash
       chdir: "/home/pacs/{{pac}}/users/{{user}}/"
       creates: "/home/pacs/{{pac}}/users/{{user}}/var/run/monit.id"
-

@@ -25,3 +25,7 @@ check process sympa_msg with pidfile /home/pacs/{{pac}}/users/{{user}}/var/run/s
 check process task_manager with pidfile /home/pacs/{{pac}}/users/{{user}}/var/run/task_manager.pid
     start program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-task-start.sh"
     stop program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-task-stop.sh"
+
+check process wwsympa with pidfile /home/pacs/{{pac}}/users/{{user}}/var/run/wwsympa.pid
+    start program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-fcgi-start.sh"
+    stop program "/home/pacs/{{pac}}/users/{{user}}/bin/sympa-fcgi-stop.sh"

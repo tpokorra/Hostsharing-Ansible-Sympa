@@ -1,0 +1,4 @@
+RewriteEngine on
+RewriteBase /
+RewriteRule "^sympa(.*)$" fcgi://127.0.0.1:32205$1 [proxy,last]
+RewriteRule "^$" https://{{domain}}/sympa

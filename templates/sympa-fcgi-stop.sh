@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export HOME=/home/pacs/{{pac}}/users/{{user}}
-export PID=$HOME/sympa/var/run/task_manager.pid
+export PID=$HOME/var/run/wwsympa.pid
 
 if [ -f $PID ] ; then 
     kill $( cat $PID );

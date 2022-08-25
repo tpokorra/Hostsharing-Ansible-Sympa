@@ -8,4 +8,6 @@ sympa:
       user: sympa
       password: testpassw0rd_changeme
 
+      sympa_fcgi_port: 30333
+
       sympa_version: 6.2.68
