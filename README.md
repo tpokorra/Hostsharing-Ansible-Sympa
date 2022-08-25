@@ -35,6 +35,8 @@ Now we can reach our site via:
 
     https://sympa.example.org
 
+Use your listmaster email address, from the inventory.yml, eg. listmaster@example.org, to get a new password for the List Administrator.
+
 Open Source Hosting
 -------------------
 

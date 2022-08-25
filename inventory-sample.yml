@@ -8,6 +8,8 @@ sympa:
       user: sympa
       password: testpassw0rd_changeme
 
+      listmaster: listmaster@example.org
+
       sympa_fcgi_port: 30333
 
       sympa_version: 6.2.68
