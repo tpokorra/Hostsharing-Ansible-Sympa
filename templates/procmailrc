@@ -1,0 +1,12 @@
+HOME=/home/pacs/{{pac}}/users/{{user}}
+#LOGFILE=$HOME/var/procmail.log
+SHELL=/bin/bash
+TIMESTAMP=`date +%s`
+RANDINT=`/bin/bash -c "echo $[ $RANDOM % 10000 + 100]"`
+
+#:0 c:
+#$HOME/Maildir/
+
+#:0
+#* ^TO_meineliste@sympa\.example\.org
+#| (cat > $HOME/var/spool/msg/meineliste\@sympa.example.org.$TIMESTAMP.00000\,$RANDINT )

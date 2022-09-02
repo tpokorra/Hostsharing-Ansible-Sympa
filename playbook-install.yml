@@ -49,6 +49,12 @@
     file:
       path: "/home/pacs/{{pac}}/users/{{user}}/var/run"
       state: directory
+  - name: create directory var/spool
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    file:
+      path: "/home/pacs/{{pac}}/users/{{user}}/var/spool"
+      state: directory
 
   ##################################
   ## install sympa
@@ -71,6 +77,7 @@
       ./configure --enable-fhs --prefix=/home/pacs/{{pac}}/users/{{user}}/sympa \
          --with-confdir=/home/pacs/{{pac}}/users/{{user}}/etc \
          --with-piddir=/home/pacs/{{pac}}/users/{{user}}/var/run \
+         --with-spooldir=/home/pacs/{{pac}}/users/{{user}}/var/spool \
          --with-user={{pac}}-{{user}} --with-group={{pac}} \
          --without-initdir || exit -1
       make || exit -1
@@ -134,6 +141,19 @@
       executable: /bin/bash
       chdir: "/home/pacs/{{pac}}/users/{{user}}/sympa"
       creates: "/home/pacs/{{pac}}/users/{{user}}/.db_created"
+
+  ##########################################
+  ## setup the processing of incoming emails
+  ##########################################
+  - name: upload .forward file
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    template: dest="/home/pacs/{{pac}}/users/{{user}}/.forward" src="templates/forward" mode=644
+
+  - name: upload .procmailrc file
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    template: dest="/home/pacs/{{pac}}/users/{{user}}/.procmailrc" src="templates/procmailrc" mode=644 force=no
 
   ########################
   ## setup the apache site
