@@ -109,6 +109,11 @@
     become_user: "{{pac}}-{{user}}"
     template: dest="/home/pacs/{{pac}}/users/{{user}}/etc/sympa.conf" src="templates/sympa.conf"
 
+  - name: upload script to add new lists to procmailrc
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    template: dest="/home/pacs/{{pac}}/users/{{user}}/bin/addlist.sh" src="templates/addlist.sh" mode=755
+
   - name: upload monit file
     become: yes
     become_user: "{{pac}}-{{user}}"
