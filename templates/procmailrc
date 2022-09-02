@@ -7,6 +7,7 @@ RANDINT=`/bin/bash -c "echo $[ $RANDOM % 10000 + 100]"`
 #:0 c:
 #$HOME/Maildir/
 
+# add your own mailinglist similar to this:
 #:0
 #* ^TO_meineliste@sympa\.example\.org
 #| (cat > $HOME/var/spool/msg/meineliste\@sympa.example.org.$TIMESTAMP.00000\,$RANDINT )
